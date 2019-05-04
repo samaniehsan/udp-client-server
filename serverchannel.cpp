@@ -46,8 +46,9 @@ void ServerChannel::initServerAddress(
 
 int ServerChannel::run(
 ) {
+  STUDENT_MAP::iterator it = studentDatabase.find(1);
   int nCode = bind(serverSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
-
+  std::cout<<"binded"<<endl;
   if(nCode != 0) {
     SocketHelper::printError("Binding");
     return -3;
@@ -60,6 +61,7 @@ int ServerChannel::receive() {
   
   
   for(;;) {
+    std::cout<<"receive data"<<endl;
     socklen_t addr_size = sizeof (sockaddr_storage);
     struct sockaddr_storage serverStorage;
 
@@ -74,13 +76,14 @@ int ServerChannel::receive() {
         0,
         (struct sockaddr *)&serverStorage,
         &addr_size);
-      if(nBytes > 0) {
+  
+    if(nBytes > 0) {
         cout<<"data received. "
         " header code:"<<
         (int)header.code<<endl;
 
         cout<<"reading data"<<endl;
-        int errorCode = readData(&serverStorage,(Action_Code)header.code);
+        int errorCode = readData(&serverStorage,addr_size, (Action_Code)header.code);
       } else {
         SocketHelper::printError("recvFrom");
         return -6;
@@ -91,10 +94,10 @@ int ServerChannel::receive() {
 }
 
 int ServerChannel::handleDisplayAll(
-  sockaddr_storage* serverStorage
+  sockaddr_storage* serverStorage,
+  socklen_t& addr_size
 ) {
   cout<<"handle display All"<<endl;
-  socklen_t addr_size = sizeof (sockaddr_storage);
   RequestHeader header = {.code=Action_Code_Display_All};
   int errorCode = recvfrom(
         serverSocket,
@@ -144,10 +147,10 @@ int ServerChannel::handleDisplayAll(
 }
 
 int ServerChannel::handleDisplayScore(
-  sockaddr_storage* serverStorage
+  sockaddr_storage* serverStorage,
+  socklen_t& addr_size
 ) {
   cout<<"handle display Score"<<endl;
-  socklen_t addr_size = sizeof (sockaddr_storage);
   ScoreRequest scoreRequest = {0};
   int errorCode = recvfrom(
         serverSocket,
@@ -217,11 +220,10 @@ int ServerChannel::handleDisplayScore(
 
 
 int ServerChannel::handleDisplayStudentId(
-  sockaddr_storage* serverStorage
+  sockaddr_storage* serverStorage,
+  socklen_t& addr_size
 ) {
   cout<<"handle display Student by Id"<<endl;
-  
-  socklen_t addr_size = sizeof serverStorage;
   StudentRequest studentRequest = {0};
   int errorCode = recvfrom(
     serverSocket,
@@ -301,10 +303,12 @@ int ServerChannel::handleDisplayStudentId(
 }
 
 int ServerChannel::handleAdd(
-  sockaddr_storage* serverStorage
-  ) {
+  sockaddr_storage* serverStorage,
+  socklen_t& addr_size
+) {
   Student student = {0};
-  socklen_t addr_size = sizeof (sockaddr_storage);
+  memset(&student, 0 ,sizeof(Student));
+  std::cout<<"reading student add"<<endl;
   int errorCode = recvfrom(
     serverSocket,
     &student,
@@ -312,28 +316,38 @@ int ServerChannel::handleAdd(
     0,
     (struct sockaddr *)&serverStorage,
     &addr_size);
-
+  std::cout<<"student add data was read addr_size:"<<addr_size<<endl;
   if(errorCode == -1) {
     SocketHelper::printError("handleAdd_Send");
     return -40;
   }
+  cout<<"stduentid:"<<student.studentId<<endl;
+  cout<<"score:"<<(int)student.score<<endl;
+  cout<<"firstName:"<<student.firstName<<endl;
+  cout<<"lastName:"<<student.lastName<<endl;
+  
   STUDENT_MAP::iterator it = studentDatabase.find(student.studentId);
+  cout<<"done search map"<<endl;
   if(it == studentDatabase.end()) {
+    cout<<"student not found"<<endl;
     if(student.score <=  100) {
+      cout<<"trying to insert"<<endl;
       studentDatabase.insert(
             pair<unsigned int, Student>(
               student.studentId, student));
+      std::cout<<"student was addded"<<endl;
     }
   } else {
+    cout<<"setting repeat student."<<endl;
     it->second = student;
   }
   return 0;
 }
 
 int ServerChannel::handleDelete(
-  sockaddr_storage* serverStorage
+  sockaddr_storage* serverStorage,
+  socklen_t& addr_size
 ) {
-  socklen_t addr_size = sizeof (sockaddr_storage);
   StudentRequest studentRequest = {0};
   int errorCode = recvfrom(
     serverSocket,
@@ -357,23 +371,24 @@ int ServerChannel::handleDelete(
 
 int ServerChannel::readData(
   sockaddr_storage* serverStorage,
+  socklen_t& addr_size,
   Action_Code code
-  ) {
+) {
     switch(code) {
         case Action_Code_Display_All:
-            return handleDisplayAll(serverStorage);
+            return handleDisplayAll(serverStorage,addr_size);
             break;
         case Action_Code_Display_Score:
-            return handleDisplayScore(serverStorage);
+            return handleDisplayScore(serverStorage,addr_size);
             break;
         case Action_Code_Display_Id:
-            return handleDisplayStudentId(serverStorage);
+            return handleDisplayStudentId(serverStorage,addr_size);
             break;
         case Action_Code_Display_Add:
-            return handleAdd(serverStorage);
+            return handleAdd(serverStorage,addr_size);
             break;
         case Action_Code_Display_Delete:
-            return handleDelete(serverStorage);
+            return handleDelete(serverStorage,addr_size);
             break;
     }
     return -8;

@@ -20,13 +20,13 @@ private:
     );
     void initServerAddress(const unsigned short int port);
     
-    int handleDisplayAll(sockaddr_storage* serverStorage);
-    int handleDisplayScore(sockaddr_storage* serverStorage);
-    int handleDisplayStudentId(sockaddr_storage* serverStorage);
-    int handleAdd(sockaddr_storage* serverStorage);
-    int handleDelete(sockaddr_storage* serverStorage);    
     int receive();
-    int readData(sockaddr_storage* serverStorage, Action_Code code);
+    int handleDisplayAll(sockaddr_storage* serverStorage,socklen_t& addr_size);
+    int handleDisplayScore(sockaddr_storage* serverStorage,socklen_t& addr_size);
+    int handleDisplayStudentId(sockaddr_storage* serverStorage,socklen_t& addr_size);
+    int handleAdd(sockaddr_storage* serverStorage,socklen_t& addr_size);
+    int handleDelete(sockaddr_storage* serverStorage,socklen_t& addr_size);    
+    int readData(sockaddr_storage* serverStorage,socklen_t& addr_size, Action_Code code);
     void printStudents(const std::vector<Student>& studentList);
 private:
 int serverSocket;
