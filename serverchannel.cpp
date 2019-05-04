@@ -81,7 +81,7 @@ int ServerChannel::receive() {
         (int)header.code<<endl;
 
         cout<<"reading data"<<endl;
-        errorCode = readData(clientSocket,(Action_Code)header.code);
+        errorCode = readData(&serverStorage,(Action_Code)header.code);
         if(errorCode != 0) {
           cerr<<"readDataError:"<<errorCode<<endl;
           return -7;
@@ -95,12 +95,20 @@ int ServerChannel::receive() {
   return 0;
 }
 
-int ServerChannel::handleDisplayAll(sockaddr_storage* serverStorage) {
+int ServerChannel::handleDisplayAll(
+  sockaddr_storage* serverStorage
+) {
   cout<<"handle display All"<<endl;
   
   RequestHeader header = {.code=Action_Code_Display_All};
   cout<<"sending header"<<sizeof(header)<<"Code:"<<(int)header.code<<endl;
-  int errorCode = send(clientSocket,&header,sizeof(header),0);
+  int errorCode = recvfrom(
+        udpSocket,
+        &header,
+        sizeof(RequestHeader),
+        0,
+        (struct sockaddr *)&serverStorage,
+        &addr_size);
   cout<<"error code:"<<errorCode<<endl;
   if(errorCode == -1) {
     SocketHelper::printError("DisplayStudentId_send1");
@@ -109,7 +117,7 @@ int ServerChannel::handleDisplayAll(sockaddr_storage* serverStorage) {
   
   int n = (int)studentDatabase.size();
   std::cout<<"sending database length"<<n<<endl;
-  errorCode = send(clientSocket,&n,sizeof(int),0);
+  errorCode = sendto(serverSocket,&n,sizeof(int),0);
   
   if(errorCode == -1) {
       SocketHelper::printError("DisplayStudentId_send2");
@@ -119,7 +127,7 @@ int ServerChannel::handleDisplayAll(sockaddr_storage* serverStorage) {
   STUDENT_MAP::const_iterator it;
   for (it=studentDatabase.begin(); it!=studentDatabase.end(); ++it) {
       cout<<"sending student id:"<<it->second.studentId<<endl;
-      errorCode = send(clientSocket,&it->second,sizeof(Student), 0);
+      errorCode = send(serverSocket,&it->second,sizeof(Student), 0);
       if(errorCode == -1) {
         SocketHelper::printError("DisplayStudentId_send3");
         return -10;
@@ -128,12 +136,19 @@ int ServerChannel::handleDisplayAll(sockaddr_storage* serverStorage) {
   return 0;
 }
 
-int ServerChannel::handleDisplayScore(sockaddr_storage* serverStorage) {
-    cout<<"handle display Score"<<endl;
+int ServerChannel::handleDisplayScore(
+  sockaddr_storage* serverStorage
+) {
+  cout<<"handle display Score"<<endl;
     
-    ScoreRequest scoreRequest = {0};
-    int errorCode = recv(clientSocket, &scoreRequest, sizeof(ScoreRequest), 0);
-    
+  ScoreRequest scoreRequest = {0};
+  int errorCode = recvfrom(
+        udpSocket,
+        &scoreRequest,
+        sizeof(ScoreRequest),
+        0,
+        (struct sockaddr *)&serverStorage,
+        &addr_size);    
     
     if(errorCode == -1) {
       SocketHelper::printError("handleDisplayScore_recv");
@@ -141,7 +156,7 @@ int ServerChannel::handleDisplayScore(sockaddr_storage* serverStorage) {
     }
     
     RequestHeader header = {.code=Action_Code_Display_Score};
-    errorCode = send(clientSocket, &header, sizeof(RequestHeader), 0);
+    errorCode = sendto(serverSocket, &header, sizeof(RequestHeader), 0);
     
     if(errorCode == -1) {
       SocketHelper::printError("handleDisplayScore_recv");
@@ -155,7 +170,7 @@ int ServerChannel::handleDisplayScore(sockaddr_storage* serverStorage) {
         }
     }
     int n = (int)tempDb.size();
-    errorCode = send(clientSocket,&n,sizeof(int),0);
+    errorCode = sendto(serverSocket,&n,sizeof(int),0);
     
     if(errorCode == -1) {
       SocketHelper::printError("handleDisplayScore_recv");
@@ -163,7 +178,7 @@ int ServerChannel::handleDisplayScore(sockaddr_storage* serverStorage) {
     }
 
     for (STUDENT_MAP::iterator it=tempDb.begin(); it!=tempDb.end(); ++it) {
-        errorCode = send(clientSocket,&it->second,sizeof(Student), 0);
+        errorCode = send(serverSocket,&it->second,sizeof(Student), 0);
         
         if(errorCode == -1) {
           SocketHelper::printError("handleDisplayScore_recv");
@@ -174,7 +189,9 @@ int ServerChannel::handleDisplayScore(sockaddr_storage* serverStorage) {
 }
 
 
-int ServerChannel::handleDisplayStudentId(sockaddr_storage* serverStorage) {
+int ServerChannel::handleDisplayStudentId(
+  sockaddr_storage* serverStorage
+) {
   cout<<"handle display Student by Id"<<endl;
   
   socklen_t addr_size = sizeof serverStorage;
@@ -212,14 +229,14 @@ int ServerChannel::handleDisplayStudentId(sockaddr_storage* serverStorage) {
       }
         
       int n = 1;
-      errorCode = send(clientSocket,&n,sizeof(int), 0);
+      errorCode = send(serverSocket,&n,sizeof(int), 0);
       
       if(errorCode == -1) {
           SocketHelper::printError("DisplayStudentId_Send2");
           return 31;
       }
         
-      errorCode = send(clientSocket,&it->second,sizeof(Student), 0);
+      errorCode = send(serverSocket,&it->second,sizeof(Student), 0);
       if(errorCode == -1) {
         SocketHelper::printError("DisplayStudentId_Send3");
         return -32;
@@ -227,7 +244,7 @@ int ServerChannel::handleDisplayStudentId(sockaddr_storage* serverStorage) {
         
   } else {
     int n = 0;
-    errorCode = send(clientSocket,&n,sizeof(int), 0);
+    errorCode = send(serverSocket,&n,sizeof(int), 0);
     
     if(errorCode == -1) {
       SocketHelper::printError("DisplayStudentId_Send4");
@@ -237,7 +254,9 @@ int ServerChannel::handleDisplayStudentId(sockaddr_storage* serverStorage) {
   return 0;
 }
 
-int ServerChannel::handleAdd(int clientSocket) {
+int ServerChannel::handleAdd(
+  sockaddr_storage* serverStorage
+  ) {
   Student student = {0};
   int errorCode = recvfrom(
     serverSocket,
@@ -260,7 +279,9 @@ int ServerChannel::handleAdd(int clientSocket) {
   return 0;
 }
 
-int ServerChannel::handleDelete(sockaddr_storage* serverStorage) {
+int ServerChannel::handleDelete(
+  sockaddr_storage* serverStorage
+) {
   StudentRequest studentRequest = {0};
   int errorCode = recvfrom(
     serverSocket,
