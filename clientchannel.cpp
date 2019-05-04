@@ -16,14 +16,31 @@ ClientChannel::ClientChannel(
   const unsigned short int nPort
 ):clientSocket(-1) {
 
-  /*---- Create the socket. The three arguments are: ----*/
-  /* 1) Internet domain 2) Stream socket 3) Default protocol (TCP in this case) */
- clientSocket = socket(PF_INET, SOCK_STREAM, 0);
- initServerAddress(&szAddr[0],nPort);
+    /*---- Create the socket. The three arguments are: ----*/
+    /* 1) Internet domain 2) Stream socket 3) Default protocol (TCP in this case) */
+  clientSocket = socket(PF_INET, SOCK_DGRAM, 0);
+  initServerAddress(&szAddr[0],nPort);
+  addr_size = sizeof(this->serverAddr);
 }
 
 ClientChannel::~ClientChannel() {
   close(clientSocket);
+}
+
+void ClientChannel::initServerAddress(
+  const char * szAddr,
+  const unsigned short int port
+) {
+  
+   /*---- Configure settings of the server address struct ----*/
+  /* Address family = Internet */
+  this->serverAddr.sin_family = AF_INET;
+  /* Set port number, using htons function to use proper byte order */
+  this->serverAddr.sin_port = htons(port);
+  /* Set IP address to localhost */
+  this->serverAddr.sin_addr.s_addr = inet_addr(szAddr);
+  /* Set all bits of the padding field to 0 */
+  memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
 }
 
 bool ClientChannel::getStudents(const Action_Code desiredActionCode,vector<Student> & studentList) {
@@ -87,6 +104,7 @@ bool ClientChannel::addStudents() {
     const Student & student = students[i];
     if(!SocketHelper::addStudent(
       clientSocket,
+      addr_size,
       student.studentId, 
       student.firstName,
       student.lastName,
@@ -154,31 +172,9 @@ bool ClientChannel::displayStudentsById(int studentId) {
   return true;
 }
 
-void ClientChannel::initServerAddress(
-  const char * szAddr,
-  const unsigned short int port
-) {
-  
-   /*---- Configure settings of the server address struct ----*/
-  /* Address family = Internet */
-  this->serverAddr.sin_family = AF_INET;
-  /* Set port number, using htons function to use proper byte order */
-  this->serverAddr.sin_port = htons(port);
-  /* Set IP address to localhost */
-  this->serverAddr.sin_addr.s_addr = inet_addr(szAddr);
-  /* Set all bits of the padding field to 0 */
-  memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
-}
-
-
 int ClientChannel::run(
 ) {
 
-  socklen_t addr_size = sizeof (serverAddr);
-  int nCode = connect(
-    clientSocket,
-    (struct sockaddr *) &serverAddr,
-    addr_size);
   if (nCode != 0 ) {
     SocketHelper::printError("Connecting");
     return 3;

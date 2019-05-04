@@ -96,7 +96,6 @@ int ServerChannel::handleDisplayAll(
   cout<<"handle display All"<<endl;
   socklen_t addr_size = sizeof (sockaddr_storage);
   RequestHeader header = {.code=Action_Code_Display_All};
-  cout<<"sending header"<<sizeof(header)<<"Code:"<<(int)header.code<<endl;
   int errorCode = recvfrom(
         serverSocket,
         &header,
@@ -129,7 +128,13 @@ int ServerChannel::handleDisplayAll(
   STUDENT_MAP::const_iterator it;
   for (it=studentDatabase.begin(); it!=studentDatabase.end(); ++it) {
       cout<<"sending student id:"<<it->second.studentId<<endl;
-      errorCode = send(serverSocket,&it->second,sizeof(Student), 0);
+      errorCode = sendto(
+                    serverSocket,
+                    &it->second,
+                    sizeof(Student),
+                    0,
+                    (struct sockaddr *)&serverStorage,
+                    addr_size);
       if(errorCode == -1) {
         SocketHelper::printError("DisplayStudentId_send3");
         return -10;
@@ -156,6 +161,13 @@ int ServerChannel::handleDisplayScore(
       SocketHelper::printError("handleDisplayScore_recv");
       return -20;
     }
+
+    STUDENT_MAP tempDb;
+    for (STUDENT_MAP::const_iterator it=studentDatabase.begin(); it!=studentDatabase.end(); ++it) {
+        if(it->second.score > scoreRequest.score) {
+            tempDb.insert(pair<int, Student>(it->first, it->second)); 
+        }
+    }
     
     RequestHeader header = {.code=Action_Code_Display_Score};
     errorCode = sendto(
@@ -169,14 +181,8 @@ int ServerChannel::handleDisplayScore(
     if(errorCode == -1) {
       SocketHelper::printError("handleDisplayScore_recv");
       return -21;
-    }
-
-    STUDENT_MAP tempDb;
-    for (STUDENT_MAP::const_iterator it=studentDatabase.begin(); it!=studentDatabase.end(); ++it) {
-        if(it->second.score > scoreRequest.score) {
-            tempDb.insert(pair<int, Student>(it->first, it->second)); 
-        }
-    }
+    }    
+    
     int n = (int)tempDb.size();
     errorCode = sendto(
       serverSocket,
@@ -192,14 +198,21 @@ int ServerChannel::handleDisplayScore(
     }
 
     for (STUDENT_MAP::iterator it=tempDb.begin(); it!=tempDb.end(); ++it) {
-        errorCode = send(serverSocket,&it->second,sizeof(Student), 0);
+        Student student = it->second;
+        errorCode = sendto(
+                      serverSocket,
+                      &student,
+                      sizeof(Student),
+                      0,
+                      (struct sockaddr *)&serverStorage,
+                      addr_size);
         
         if(errorCode == -1) {
           SocketHelper::printError("handleDisplayScore_recv");
           return -23;
         }
     }
-  return 0;
+    return 0;
 }
 
 
@@ -244,14 +257,26 @@ int ServerChannel::handleDisplayStudentId(
       }
         
       int n = 1;
-      errorCode = send(serverSocket,&n,sizeof(int), 0);
-      
+      errorCode = sendto(
+        serverSocket,
+        &n,
+        sizeof(int),
+        0,
+        (struct sockaddr *)&serverStorage,
+        addr_size);
+
       if(errorCode == -1) {
           SocketHelper::printError("DisplayStudentId_Send2");
           return 31;
       }
-        
-      errorCode = send(serverSocket,&it->second,sizeof(Student), 0);
+      
+      sendto(
+        serverSocket,
+        &it->second,
+        sizeof(Student),
+        0,
+        (struct sockaddr *)&serverStorage,
+        addr_size);
       if(errorCode == -1) {
         SocketHelper::printError("DisplayStudentId_Send3");
         return -32;
@@ -259,8 +284,14 @@ int ServerChannel::handleDisplayStudentId(
         
   } else {
     int n = 0;
-    errorCode = send(serverSocket,&n,sizeof(int), 0);
-    
+    errorCode = sendto(
+        serverSocket,
+        &n,
+        sizeof(int),
+        0,
+        (struct sockaddr *)&serverStorage,
+        addr_size);
+
     if(errorCode == -1) {
       SocketHelper::printError("DisplayStudentId_Send4");
       return -33;
@@ -288,9 +319,11 @@ int ServerChannel::handleAdd(
   }
   STUDENT_MAP::iterator it = studentDatabase.find(student.studentId);
   if(it == studentDatabase.end()) {
-    studentDatabase.insert(
-      pair<unsigned int, Student>(
-        student.studentId, student));
+    if(student.score <=  100) {
+      studentDatabase.insert(
+            pair<unsigned int, Student>(
+              student.studentId, student));
+    }
   } else {
     it->second = student;
   }

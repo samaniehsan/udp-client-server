@@ -30,4 +30,5 @@ private:
 private:
     int clientSocket;
     sockaddr_in serverAddr;
+    socklen_t addr_size;
 };
