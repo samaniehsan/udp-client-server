@@ -197,35 +197,35 @@ int ClientChannel::run(
     return 4;
   }
 
-  // cout<<"display allstudents"<<endl;
-  // if(!displayAllStudents()) { 
-  //   std::cerr<<"displayAllStudents Failed"<<endl;
-  //   return 5;
-  // }
+  cout<<"display allstudents"<<endl;
+  if(!displayAllStudents()) { 
+    std::cerr<<"displayAllStudents Failed"<<endl;
+    return 5;
+  }
 
-  // cout<<"display students by score"<<endl;
-  // if(!displayStudentsByScore(0)) {
-  //   std::cerr<<"displayStudentsByScore Failed"<<endl;
-  //   return 6;
-  // }
+  cout<<"display students by score"<<endl;
+  if(!displayStudentsByScore(0)) {
+    std::cerr<<"displayStudentsByScore Failed"<<endl;
+    return 6;
+  }
   
-  // cout<<"display students by id"<<endl;
-  // if(!displayStudentsById(100000)) {
-  //   std::cerr<<"displayStudentsById Failed"<<endl;
-  //   return 7;
-  // }
+  cout<<"display students by id"<<endl;
+  if(!displayStudentsById(100000)) {
+    std::cerr<<"displayStudentsById Failed"<<endl;
+    return 7;
+  }
 
-  // cout<<"delete student by id:100,000"<<endl;
-  // if(!deleteStudentById(100000)) {
-  //   std::cerr<<"deleteStudentByID Failed"<<endl;
-  //   return 8;
-  // }
+  cout<<"delete student by id:100,000"<<endl;
+  if(!deleteStudentById(100000)) {
+    std::cerr<<"deleteStudentByID Failed"<<endl;
+    return 8;
+  }
   
-  // cout<<"display all students"<<endl;
-  // if(!displayAllStudents()) {
-  //   std::cerr<<"displayAllStudents_2 Failed"<<endl;
-  //   return 9;
-  // }
+  cout<<"display all students"<<endl;
+  if(!displayAllStudents()) {
+    std::cerr<<"displayAllStudents_2 Failed"<<endl;
+    return 9;
+  }
 
   int errorCode = shutdown(clientSocket, 0);
   if(errorCode == -1) {
