@@ -46,7 +46,6 @@ void ServerChannel::initServerAddress(
 
 int ServerChannel::run(
 ) {
-  STUDENT_MAP::iterator it = studentDatabase.find(1);
   int nCode = bind(serverSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
   std::cout<<"binded"<<endl;
   if(nCode != 0) {
@@ -321,12 +320,12 @@ int ServerChannel::handleAdd(
     SocketHelper::printError("handleAdd_Send");
     return -40;
   }
-  cout<<"stduentid:"<<student.studentId<<endl;
+  cout<<"stduentid:"<<(unsigned int)student.studentId<<endl;
   cout<<"score:"<<(int)student.score<<endl;
   cout<<"firstName:"<<student.firstName<<endl;
   cout<<"lastName:"<<student.lastName<<endl;
   
-  STUDENT_MAP::iterator it = studentDatabase.find(student.studentId);
+  STUDENT_MAP::iterator it = this->studentDatabase.find(student.studentId);
   cout<<"done search map"<<endl;
   if(it == studentDatabase.end()) {
     cout<<"student not found"<<endl;
