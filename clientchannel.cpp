@@ -43,9 +43,12 @@ void ClientChannel::initServerAddress(
   memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
 }
 
-bool ClientChannel::getStudents(const Action_Code desiredActionCode,vector<Student> & studentList) {
+bool ClientChannel::getStudents(
+  const Action_Code desiredActionCode,
+  vector<Student> & studentList
+) {
   Action_Code code = (Action_Code)0;
-  if(!SocketHelper::receiveActionCode(clientSocket, code)) {
+  if(!SocketHelper::receiveActionCode(clientSocket,&serverAddr,addr_size, code)) {
     return false;
   }
 
@@ -55,14 +58,14 @@ bool ClientChannel::getStudents(const Action_Code desiredActionCode,vector<Stude
   }
 
   int nCount = 0;
-  if(!SocketHelper::receiveStudentsCount(clientSocket,nCount)) {
+  if(!SocketHelper::receiveStudentsCount(clientSocket,&serverAddr,addr_size,nCount)) {
     return false;
   }
   
   int i;
   for(i = 0; i < nCount; i++ ) {
     Student student;
-    if(!SocketHelper::receiveStudentInfo(clientSocket, student)) {
+    if(!SocketHelper::receiveStudentInfo(clientSocket,&serverAddr,addr_size, student)) {
       std::cerr<<"cannot receive student:"<<i+1<<"of"<<nCount<<endl;
       return false;
     }
@@ -104,6 +107,7 @@ bool ClientChannel::addStudents() {
     const Student & student = students[i];
     if(!SocketHelper::addStudent(
       clientSocket,
+      &serverAddr,
       addr_size,
       student.studentId, 
       student.firstName,
@@ -116,7 +120,7 @@ bool ClientChannel::addStudents() {
 }
 
 bool ClientChannel::deleteStudentById(int studentId) {
-  if(!SocketHelper::deleteStudent(clientSocket,studentId)) {
+  if(!SocketHelper::deleteStudent(clientSocket,&serverAddr,addr_size,studentId)) {
     std::cerr<<"Failed to sendDeleteStudentRequest"<<endl;
     return false;
   }
@@ -125,7 +129,11 @@ bool ClientChannel::deleteStudentById(int studentId) {
 }
 
 bool ClientChannel::displayAllStudents() {
-  if(!SocketHelper::sendAllStudentsRequest(clientSocket)) {
+  if(!SocketHelper::sendAllStudentsRequest(
+    clientSocket,
+    &serverAddr,
+    addr_size
+    )) {
     std::cerr<<"Failed to getStudents"<<endl;
     return false;
   }
@@ -141,7 +149,11 @@ bool ClientChannel::displayAllStudents() {
 }
 
 bool ClientChannel::displayStudentsByScore(BYTE score) {
-  if(!SocketHelper::sendStudentsByScoreRequest(clientSocket,score)) {
+  if(!SocketHelper::sendStudentsByScoreRequest(
+    clientSocket,
+    &serverAddr,
+    addr_size,
+    score)) {
     std::cerr<<"Failed to getStudents"<<endl;
     return false;
   }
@@ -157,7 +169,11 @@ bool ClientChannel::displayStudentsByScore(BYTE score) {
 }
 
 bool ClientChannel::displayStudentsById(int studentId) {
-  if(!SocketHelper::sendStudentsByStudentIdRequest(clientSocket, studentId)) {
+  if(!SocketHelper::sendStudentsByStudentIdRequest(
+    clientSocket,
+    &serverAddr,
+    addr_size,
+    studentId)) {
     std::cerr<<"Failed to getStudents"<<endl;
     return false;
   }
@@ -175,10 +191,6 @@ bool ClientChannel::displayStudentsById(int studentId) {
 int ClientChannel::run(
 ) {
 
-  if (nCode != 0 ) {
-    SocketHelper::printError("Connecting");
-    return 3;
-  }  
   cout<<"adding students"<<endl;
   if(!addStudents()) {
     std::cerr<<"AddStudents Failed"<<endl;

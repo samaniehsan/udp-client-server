@@ -76,6 +76,7 @@ public:
       struct sockaddr_in* serverAddr,
       const socklen_t addr_size,
       const BYTE score);
+
     static bool sendStudentsByStudentIdRequest(
       int socket,
       struct sockaddr_in* serverAddr,
