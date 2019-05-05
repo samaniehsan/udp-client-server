@@ -91,16 +91,16 @@ void ClientChannel::printStudents(const vector<Student>& studentList) {
 bool ClientChannel::addStudents() {
   const int nStudents= 10;
   Student students[nStudents] = {
-      {100000,"John","Smith",10},
-      {100001,"Jane","Moore",20},
-      {100002,"Alex","Holland",30},
-      {100003,"Alex","Bear",40},
-      {100004,"Cody","White",50},
-      {100005,"Kyle","Black",60},
-      {100006,"Shannon","O'Reilly",70},
-      {100007,"Tim","Duncan",80},
-      {100008,"Manu","Ginobili",90},
-      {100009,"Tony","Parker",100}     
+      {100000,10,"John","Smith"},
+      {100001,20,"Jane","Moore"},
+      {100002,30,"Alex","Holland"},
+      {100003,40,"Alex","Bear"},
+      {100004,50,"Cody","White"},
+      {100005,60,"Kyle","Black"},
+      {100006,70,"Shannon","O'Reilly"},
+      {100007,80,"Tim","Duncan"},
+      {100008,90,"Manu","Ginobili"},
+      {100009,100,"Tony","Parker"},
   };
   int i;
   for(i=0; i<nStudents; i++) {
@@ -148,7 +148,7 @@ bool ClientChannel::displayAllStudents() {
   return true;
 }
 
-bool ClientChannel::displayStudentsByScore(BYTE score) {
+bool ClientChannel::displayStudentsByScore(short score) {
   if(!SocketHelper::sendStudentsByScoreRequest(
     clientSocket,
     &serverAddr,
@@ -191,42 +191,49 @@ bool ClientChannel::displayStudentsById(int studentId) {
 int ClientChannel::run(
 ) {
 
-  cout<<"adding students"<<endl;
+  cout<<"----adding students----"<<endl;
   if(!addStudents()) {
     std::cerr<<"AddStudents Failed"<<endl;
     return 4;
   }
+  cout<<"-----------------------"<<endl;
 
-  cout<<"display allstudents"<<endl;
+  cout<<"--display allstudents--"<<endl;
   if(!displayAllStudents()) { 
     std::cerr<<"displayAllStudents Failed"<<endl;
     return 5;
   }
+  cout<<"-----------------------"<<endl;
 
   cout<<"display students by score"<<endl;
   if(!displayStudentsByScore(0)) {
     std::cerr<<"displayStudentsByScore Failed"<<endl;
     return 6;
   }
+  cout<<"-----------------------"<<endl;
   
-  cout<<"display students by id"<<endl;
+  cout<<"--display students by id--"<<endl;
   if(!displayStudentsById(100000)) {
     std::cerr<<"displayStudentsById Failed"<<endl;
     return 7;
   }
+  cout<<"-----------------------"<<endl;
 
-  cout<<"delete student by id:100,000"<<endl;
+  cout<<"--delete student by id:100000---"<<endl;
   if(!deleteStudentById(100000)) {
     std::cerr<<"deleteStudentByID Failed"<<endl;
     return 8;
   }
+  cout<<"-----------------------"<<endl;
   
-  cout<<"display all students"<<endl;
+  cout<<"--display all students--"<<endl;
   if(!displayAllStudents()) {
     std::cerr<<"displayAllStudents_2 Failed"<<endl;
     return 9;
   }
+  cout<<"-----------------------"<<endl;
 
+  cout<<"shutting down client"<<endl;
   int errorCode = shutdown(clientSocket, 0);
   if(errorCode == -1) {
     SocketHelper::printError("shutdown");

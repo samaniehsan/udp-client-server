@@ -1,8 +1,8 @@
 all: clean server client
 server:
-	g++ server.cpp common.cpp serverchannel.cpp -o server
+	g++ server.cpp -g common.cpp serverchannel.cpp -o server
 client:
-	g++ client.cpp common.cpp clientchannel.cpp -o client
+	g++ client.cpp -g common.cpp clientchannel.cpp -o client
 
 server-O3:
 	g++ -O3 server.cpp common.cpp serverchannel.cpp -o server

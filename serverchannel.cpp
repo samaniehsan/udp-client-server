@@ -58,31 +58,31 @@ int ServerChannel::run(
 int ServerChannel::receive() {
     /*---- Accept call creates a new socket for the incoming connection ----*/
   
-  
+  cout<<"studentDatabase:empty"<<studentDatabase.empty()<<endl;
   for(;;) {
-    std::cout<<"receive data"<<endl;
+    std::cout<<"blocking data reception:"<<endl;
     socklen_t addr_size = sizeof (sockaddr_storage);
     struct sockaddr_storage serverStorage;
 
     RequestHeader header;
     memset(&header,  0, sizeof(RequestHeader));
+
     /*---- Send message to the socket of the incoming connection ----*/
     
     int nBytes = recvfrom(
         serverSocket,
         &header,
         sizeof(RequestHeader),
-        0,
+        MSG_WAITALL,
         (struct sockaddr *)&serverStorage,
         &addr_size);
-  
     if(nBytes > 0) {
-        cout<<"data received. "
-        " header code:"<<
-        (int)header.code<<endl;
-
-        cout<<"reading data"<<endl;
+        cout<<"requestHeader:"<<(int)header.code<<endl;
+        cout<<"invoke readData"<<endl;
         int errorCode = readData(&serverStorage,addr_size, (Action_Code)header.code);
+        if(errorCode != 0) {
+          return errorCode;
+        }
       } else {
         SocketHelper::printError("recvFrom");
         return -6;
@@ -97,14 +97,15 @@ int ServerChannel::handleDisplayAll(
   socklen_t& addr_size
 ) {
   cout<<"handle display All"<<endl;
-  RequestHeader header = {.code=Action_Code_Display_All};
-  int errorCode = recvfrom(
+  RequestHeader header = {Action_Code_Display_All};
+  int errorCode = sendto(
         serverSocket,
         &header,
         sizeof(RequestHeader),
         0,
-        (struct sockaddr *)&serverStorage,
-        &addr_size);
+        (struct sockaddr *)serverStorage,
+        addr_size);
+
   cout<<"error code:"<<errorCode<<endl;
   if(errorCode == -1) {
     SocketHelper::printError("DisplayStudentId_send1");
@@ -119,7 +120,7 @@ int ServerChannel::handleDisplayAll(
       &n,
       sizeof(int),
       0,
-      (struct sockaddr *)&serverStorage,
+      (struct sockaddr *)serverStorage,
       addr_size);
 
   if(errorCode == -1) {
@@ -135,7 +136,7 @@ int ServerChannel::handleDisplayAll(
                     &it->second,
                     sizeof(Student),
                     0,
-                    (struct sockaddr *)&serverStorage,
+                    (struct sockaddr *)serverStorage,
                     addr_size);
       if(errorCode == -1) {
         SocketHelper::printError("DisplayStudentId_send3");
@@ -155,8 +156,8 @@ int ServerChannel::handleDisplayScore(
         serverSocket,
         &scoreRequest,
         sizeof(ScoreRequest),
-        0,
-        (struct sockaddr *)&serverStorage,
+        MSG_WAITALL,
+        (struct sockaddr *)serverStorage,
         &addr_size);    
     
     if(errorCode == -1) {
@@ -177,7 +178,7 @@ int ServerChannel::handleDisplayScore(
       &header, 
       sizeof(RequestHeader),
        0,
-       (struct sockaddr *)&serverStorage,
+       (struct sockaddr *)serverStorage,
       addr_size);
     
     if(errorCode == -1) {
@@ -191,7 +192,7 @@ int ServerChannel::handleDisplayScore(
       &n,
       sizeof(int),
       0,
-      (struct sockaddr *)&serverStorage,
+      (struct sockaddr *)serverStorage,
       addr_size);
     
     if(errorCode == -1) {
@@ -206,7 +207,7 @@ int ServerChannel::handleDisplayScore(
                       &student,
                       sizeof(Student),
                       0,
-                      (struct sockaddr *)&serverStorage,
+                      (struct sockaddr *)serverStorage,
                       addr_size);
         
         if(errorCode == -1) {
@@ -228,8 +229,8 @@ int ServerChannel::handleDisplayStudentId(
     serverSocket,
     &studentRequest,
     sizeof(StudentRequest),
-    0,
-    (struct sockaddr *)&serverStorage,
+    MSG_WAITALL,
+    (struct sockaddr *)serverStorage,
      &addr_size);
   
   if(errorCode == -1) {
@@ -249,7 +250,7 @@ int ServerChannel::handleDisplayStudentId(
         &studentRequest,
         sizeof(RequestHeader),
         0,
-        (struct sockaddr *)&serverStorage,
+        (struct sockaddr *)serverStorage,
         addr_size);
       
       if(errorCode == -1) {
@@ -263,7 +264,7 @@ int ServerChannel::handleDisplayStudentId(
         &n,
         sizeof(int),
         0,
-        (struct sockaddr *)&serverStorage,
+        (struct sockaddr *)serverStorage,
         addr_size);
 
       if(errorCode == -1) {
@@ -276,7 +277,7 @@ int ServerChannel::handleDisplayStudentId(
         &it->second,
         sizeof(Student),
         0,
-        (struct sockaddr *)&serverStorage,
+        (struct sockaddr *)serverStorage,
         addr_size);
       if(errorCode == -1) {
         SocketHelper::printError("DisplayStudentId_Send3");
@@ -290,7 +291,7 @@ int ServerChannel::handleDisplayStudentId(
         &n,
         sizeof(int),
         0,
-        (struct sockaddr *)&serverStorage,
+        (struct sockaddr *)serverStorage,
         addr_size);
 
     if(errorCode == -1) {
@@ -312,9 +313,10 @@ int ServerChannel::handleAdd(
     serverSocket,
     &student,
     sizeof(Student),
-    0,
-    (struct sockaddr *)&serverStorage,
+    MSG_WAITALL,
+    (struct sockaddr *)serverStorage,
     &addr_size);
+  cout<<"studentDatabase:empty"<<studentDatabase.empty()<<endl;
   std::cout<<"student add data was read addr_size:"<<addr_size<<endl;
   if(errorCode == -1) {
     SocketHelper::printError("handleAdd_Send");
@@ -337,8 +339,10 @@ int ServerChannel::handleAdd(
       std::cout<<"student was addded"<<endl;
     }
   } else {
-    cout<<"setting repeat student."<<endl;
-    it->second = student;
+    if(student.score <= 100) {
+      cout<<"setting repeat student."<<endl;
+      it->second = student;
+    }
   }
   return 0;
 }
@@ -352,7 +356,7 @@ int ServerChannel::handleDelete(
     serverSocket,
     &studentRequest,
     sizeof(StudentRequest),
-    0,
+    MSG_WAITALL,
     (struct sockaddr *)serverStorage,
      &addr_size);
   
@@ -373,6 +377,7 @@ int ServerChannel::readData(
   socklen_t& addr_size,
   Action_Code code
 ) {
+  cout<<"studentDatabase:empty"<<studentDatabase.empty()<<endl;
     switch(code) {
         case Action_Code_Display_All:
             return handleDisplayAll(serverStorage,addr_size);

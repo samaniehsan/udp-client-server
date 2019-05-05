@@ -2,12 +2,6 @@
 #ifndef SOCKET_HELPER
 #define SOCKET_HELPER
 
-#ifndef BYTE
-typedef char BYTE;
-#endif
-
-
-
 enum Action_Code {
   Action_Code_Display_All = 1,
   Action_Code_Display_Score = 2,
@@ -17,7 +11,7 @@ enum Action_Code {
 };
 
 typedef struct {
-    BYTE code;
+    short code;
 } RequestHeader;
 
 typedef struct {
@@ -25,14 +19,14 @@ typedef struct {
 } StudentRequest;
 
 typedef struct {
-  BYTE score;
+  short score;
 } ScoreRequest;
 
 typedef struct {
   unsigned int studentId;
+  short score;
   char firstName[11];
   char lastName[11];
-  BYTE score;
 } Student;
 
 class SocketHelper {
@@ -45,7 +39,7 @@ public:
         unsigned int studentId,
         const char * firstName,
         const char * lastName,
-        BYTE score);
+        short score);
     static bool deleteStudent(
       int socket,
       struct sockaddr_in* serverAddr,
@@ -75,7 +69,7 @@ public:
       int socket,
       struct sockaddr_in* serverAddr,
       const socklen_t addr_size,
-      const BYTE score);
+      const short score);
 
     static bool sendStudentsByStudentIdRequest(
       int socket,

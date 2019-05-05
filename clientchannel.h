@@ -24,7 +24,7 @@ private:
     bool deleteStudentById(int studentId);
     bool getStudents(const Action_Code desiredActionCode,vector<Student>& studentList);
     bool displayAllStudents();
-    bool displayStudentsByScore(BYTE score);
+    bool displayStudentsByScore(short score);
     bool displayStudentsById(int studentId);
     void printStudents(const vector<Student>& studentList);
 private:

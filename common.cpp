@@ -24,9 +24,8 @@ SocketHelper::addStudent(
     unsigned int studentId,
     const char * firstName,
     const char * lastName,
-    BYTE score
+    short score
 ) {
-    cout<<"sending student:"<<studentId<<endl;
     RequestHeader header = {.code=Action_Code_Display_Add};
     int nCode = sendto(
         socket,
@@ -37,9 +36,10 @@ SocketHelper::addStudent(
         addr_size);
     if(nCode != -1) {
         Student student;
+        memset(&student,0,sizeof(Student));
         student.studentId = studentId;
-        strncpy(student.firstName,firstName,11);
-        strncpy(student.lastName,lastName,11);
+        strcpy(student.firstName,firstName);
+        strcpy(student.lastName,lastName);
         student.score = score;
         int nCode = sendto(
             socket,
@@ -124,7 +124,7 @@ SocketHelper::sendStudentsByScoreRequest(
     int socket,
     struct sockaddr_in* serverAddr,
     const socklen_t addr_size,
-    BYTE score
+    short score
 ) {
     cout<<"sending display all students above score:"<<score<<endl;
     RequestHeader header = {.code=Action_Code_Display_Score};
@@ -136,7 +136,7 @@ SocketHelper::sendStudentsByScoreRequest(
         (struct sockaddr *)serverAddr,
         addr_size);
     if(nCode != -1) {
-        ScoreRequest request = {.score=score};
+        ScoreRequest request = {score};
         nCode = sendto(
             socket,
             &request,
@@ -234,7 +234,7 @@ SocketHelper::receiveStudentInfo(
     Student & student
 ) {
     int nCode = recvfrom(socket,&student,sizeof(Student),0,NULL, NULL);
-    cout<<"received "<<nCode<<" bytes."<<endl;
+    
     if(nCode != -1) {
         cout<<"student.id"<<student.studentId<<endl;
         return true;
